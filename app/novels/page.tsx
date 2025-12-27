@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+// Force dynamic rendering to avoid connecting to the database at build time
+export const dynamic = "force-dynamic";
+
 // Minimal list item type to avoid implicit-any in UI map callbacks
 interface NovelListItem {
   id: number;

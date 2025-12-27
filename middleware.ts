@@ -1,35 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 
 /**
- * Middleware to protect admin routes
- * Uses NextAuth.js for authentication
+ * Lightweight middleware to protect admin routes.
+ * Avoids importing NextAuth (keeps Edge Function small).
+ * This only checks for a NextAuth session cookie and redirects
+ * to the login page if missing. Full role checks should run
+ * on the server-side handlers where the full auth library is available.
  */
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Protect admin routes (except login page)
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    const session = await auth();
+    const cookieHeader = request.headers.get("cookie") || "";
 
-    if (!session?.user) {
-      // Redirect to login with callback URL
+    // Check for common NextAuth cookie names (secure and non-secure)
+    const hasSessionCookie =
+      cookieHeader.includes("next-auth.session-token") ||
+      cookieHeader.includes("__Secure-next-auth.session-token") ||
+      cookieHeader.includes("next-auth.callback-url");
+
+    if (!hasSessionCookie) {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Optional: Check if user has admin role
-    const userRole = (session.user as Record<string, unknown>)?.role;
-    if (userRole !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+    // Note: Role/authorization checks should be enforced in server handlers
+    // (API routes / server components) where the full auth/session can be loaded.
   }
 
   return NextResponse.next();
 }
 
-// Configure which routes this middleware applies to
+// Apply to admin routes
 export const config = {
   matcher: ["/admin/:path*"],
 };

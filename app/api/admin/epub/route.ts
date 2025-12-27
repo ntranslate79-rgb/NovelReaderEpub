@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { parseEpub, MAX_EPUB_FILE_SIZE } from "@/lib/epub";
 import { logAuditAction } from "@/lib/audit";
 
@@ -14,6 +15,8 @@ interface ImportEpubError {
 }
 
 export async function POST(req: Request): Promise<NextResponse<ImportEpubResponse | ImportEpubError>> {
+  const guard = await requireAdmin();
+  if (guard) return guard;
   try {
     // Parse form data
     const formData = await req.formData();

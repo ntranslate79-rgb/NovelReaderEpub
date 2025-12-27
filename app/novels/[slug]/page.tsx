@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
+// Avoid DB access at build time — render dynamically at request time
+export const dynamic = "force-dynamic";
+
 /* -----------------------------
    Dynamic SEO metadata
 -------------------------------- */
@@ -66,6 +69,15 @@ export default async function NovelPage({ params }: PageProps) {
     orderBy: { number: "asc" },
   });
 
+  // Local minimal chapter type for rendering
+  interface ChapterListItem {
+    id: number;
+    number: number;
+    title: string | null;
+  }
+
+  const chapterList = chapters as ChapterListItem[];
+
   // Increment views safely using ID
   const updatedNovel = await prisma.novel.update({
     where: { id: novel.id },
@@ -97,7 +109,7 @@ export default async function NovelPage({ params }: PageProps) {
           </p>
         ) : (
           <ul className="space-y-2">
-            {chapters.map((chapter) => (
+            {chapterList.map((chapter: ChapterListItem) => (
               <li key={chapter.id}>
                 <a
                   href={`/chapter/${chapter.id}`}

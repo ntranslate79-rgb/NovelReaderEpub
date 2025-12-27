@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { generateCsrfToken } from "@/lib/csrf";
 import { CsrfInput } from "@/app/admin/components/FormComponents";
 
+// Render admin chapter list dynamically to avoid DB calls during static build
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{
     novelId: string;
