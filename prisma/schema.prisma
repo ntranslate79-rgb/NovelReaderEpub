@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum NovelStatus {
+  ONGOING
+  COMPLETED
+}
+
+enum AuditActionType {
+  LOGIN_ATTEMPT
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  EPUB_IMPORT
+  CHAPTER_CREATE
+  CHAPTER_UPDATE
+  CHAPTER_DELETE
+  CHAPTER_MOVE
+  ADMIN_ACCESS
+}
+
+model AdminUser {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  role          String   @default("admin")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@index([email])
+}
+
+model AuditLog {
+  id          Int               @id @default(autoincrement())
+  adminId     Int?
+  action      AuditActionType
+  resource    String?           // e.g., "Chapter:123", "EPUB:456"
+  details     String?           // JSON details of the action
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean           @default(true)
+  errorMsg    String?
+  createdAt   DateTime          @default(now())
+
+  admin AdminUser? @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt])
+  @@index([action, createdAt])
+}
+
+model Novel {
+  id          Int         @id @default(autoincrement())
+  slug        String      @unique
+  title       String
+  description String?
+  status      NovelStatus
+  views       Int         @default(0)
+  avgRating   Float       @default(0) // Cached average rating
+  reviewCount Int         @default(0) // Cached review count
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  chapters          Chapter[]
+  readingHistory    ReadingProgress[]
+  ratings           Rating[]
+  reviews           Review[]
+
+  @@index([status])
+  @@index([avgRating])
+}
+
+model Chapter {
+  id          Int      @id @default(autoincrement())
+  novelId     Int
+  number      Int
+  title       String
+  contentHtml String
+  createdAt   DateTime @default(now())
+
+  novel             Novel               @relation(fields: [novelId], references: [id])
+  readingProgress   ReadingProgress[]
+  bookmarks         Bookmark[]
+
+  @@unique([novelId, number])
+  @@index([novelId, number])
+}
+
+// Reader user accounts (separate from AdminUser)
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  name          String?
+  image         String?
+  passwordHash  String?  // Optional if using OAuth
+  provider      String?  // "credentials", "google", "github"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  preferences       UserPreferences?
+  readingHistory    ReadingProgress[]
+  bookmarks         Bookmark[]
+  ratings           Rating[]
+  reviews           Review[]
+
+  @@index([email])
+}
+
+// User reading preferences
+model UserPreferences {
+  id              Int     @id @default(autoincrement())
+  userId          Int     @unique
+  theme           String  @default("light") // light, dark, sepia
+  fontSize        Int     @default(16)      // 12-24px
+  fontFamily      String  @default("sans")  // sans, serif, mono
+  lineHeight      Float   @default(1.6)    // 1.4-2.0
+  language        String  @default("en")
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Track reading progress for each user
+model ReadingProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  novelId     Int
+  chapterId   Int
+  progress    Int      @default(0) // 0-100 percentage
+  lastReadAt  DateTime @default(now()) @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, novelId])
+  @@index([userId, lastReadAt])
+}
+
+// User bookmarks in chapters
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  chapterId Int
+  position  Int      @default(0) // Character position in chapter
+  label     String?  // Optional bookmark label
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId, position])
+  @@index([userId])
+}
+
+// Novel ratings by users (1-5 stars)
+model Rating {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  novelId   Int
+  score     Int      // 1-5 stars
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, novelId])
+  @@index([novelId, score])
+}
+
+// User reviews for novels
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  novelId   Int
+  title     String
+  content   String   @db.Text
+  helpful   Int      @default(0)
+  approved  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  @@index([novelId, approved])
+  @@index([userId])
+}

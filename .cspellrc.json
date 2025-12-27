@@ -1,0 +1,33 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": [
+    "node_modules",
+    ".next",
+    ".git",
+    "dist",
+    "build"
+  ],
+  "words": [
+    "autoincrement",
+    "EPUB",
+    "epubjs",
+    "itemref",
+    "idref",
+    "NEXTAUTH",
+    "Prisma",
+    "Turbopack",
+    "NextAuth",
+    "bcryptjs",
+    "Tailwind",
+    "Turbopack",
+    "jszip",
+    "jsdom",
+    "formidable",
+    "cheerio",
+    "sanitize",
+    "WebP",
+    "CSRF",
+    "ENOENT"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "cSpell.words": [
+    "autoincrement",
+    "EPUB",
+    "epubjs",
+    "itemref",
+    "idref",
+    "NEXTAUTH",
+    "Prisma",
+    "Turbopack",
+    "NextAuth",
+    "bcryptjs",
+    "Tailwind",
+    "jszip",
+    "jsdom",
+    "formidable",
+    "cheerio",
+    "sanitize",
+    "WebP",
+    "CSRF",
+    "ENOENT",
+    "pytest",
+    "pytest",
+    "vite",
+    "vitepress"
+  ],
+  "cSpell.ignorePaths": [
+    "node_modules",
+    ".next",
+    ".git",
+    "dist",
+    "build"
+  ],
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
+}
