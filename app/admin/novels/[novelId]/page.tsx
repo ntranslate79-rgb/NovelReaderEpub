@@ -10,20 +10,33 @@ interface Props {
   }>;
 }
 
+// Minimal local types to avoid relying on generated Prisma types in the UI layer
+interface ChapterItem {
+  id: number;
+  number: number;
+  title: string | null;
+}
+
+interface NovelWithChapters {
+  id: number;
+  title: string;
+  chapters: ChapterItem[];
+}
+
 export default async function AdminChapterList({ params }: Props) {
   const { novelId } = await params;
   const id = Number(novelId);
 
   if (isNaN(id)) notFound();
 
-  const novel = await prisma.novel.findUnique({
+  const novel = (await prisma.novel.findUnique({
     where: { id },
     include: {
       chapters: {
         orderBy: { number: "asc" },
       },
     },
-  });
+  })) as NovelWithChapters | null;
 
   if (!novel) notFound();
 
@@ -45,7 +58,8 @@ export default async function AdminChapterList({ params }: Props) {
       </Link>
 
       <ul className="mt-6 space-y-3">
-        {novel.chapters.map((chapter) => (
+        {novel.chapters.map((chapter: ChapterItem) => (
+
           <li
             key={chapter.id}
             className="flex justify-between items-center border p-3"

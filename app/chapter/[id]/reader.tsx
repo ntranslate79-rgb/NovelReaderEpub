@@ -3,12 +3,19 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import sanitizeHtml from "sanitize-html";
-import type { Chapter } from "@prisma/client";
+
+// Local minimal Chapter type used in the client reader component
+interface ChapterLocal {
+  id: number;
+  contentHtml: string | null;
+  number: number;
+  title: string;
+}
 
 interface ReaderProps {
-  chapter: Chapter;
-  prevChapter: Chapter | null;
-  nextChapter: Chapter | null;
+  chapter: ChapterLocal;
+  prevChapter: ChapterLocal | null;
+  nextChapter: ChapterLocal | null;
 }
 
 export default function ChapterReader({
@@ -18,7 +25,7 @@ export default function ChapterReader({
 }: ReaderProps) {
   /* -------- Sanitize HTML content for security -------- */
   const sanitizedContent = useMemo(() => {
-    return sanitizeHtml(chapter.contentHtml, {
+    return sanitizeHtml(chapter.contentHtml || "", {
       allowedTags: [
         "p",
         "br",

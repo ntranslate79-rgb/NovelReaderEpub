@@ -2,15 +2,25 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+// Minimal list item type to avoid implicit-any in UI map callbacks
+interface NovelListItem {
+  id: number;
+  slug: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  views: number;
+}
+
 export const metadata: Metadata = {
   title: "Novel Reader",
   description: "Browse and read novels online",
 };
 
 export default async function HomePage() {
-  const novels = await prisma.novel.findMany({
+  const novels = (await prisma.novel.findMany({
     orderBy: { createdAt: "desc" },
-  });
+  })) as NovelListItem[];
 
   return (
     <main className="p-6">
@@ -34,7 +44,7 @@ export default async function HomePage() {
 
       {/* Novel list */}
       <ul className="space-y-4">
-        {novels.map((novel) => (
+        {novels.map((novel: NovelListItem) => (
           <li key={novel.id} className="border rounded-lg p-4">
             <h2 className="text-xl font-semibold">
               <Link
